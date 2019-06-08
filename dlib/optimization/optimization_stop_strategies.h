@@ -165,7 +165,7 @@ namespace dlib
                 return false;
 
             // check if the gradient norm is too small 
-            _current_gradient_norm = length(funct_derivative) // MF
+            _current_gradient_norm = length(funct_derivative); // MF
             if (_current_gradient_norm < _min_norm)  // MF
                 return false;
 
