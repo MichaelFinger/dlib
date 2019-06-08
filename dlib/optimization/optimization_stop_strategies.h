@@ -73,13 +73,25 @@ namespace dlib
                     return false;
 
                 // check if the function change was too small
-                if (std::abs(funct_value - _prev_funct_value) < _min_delta)
+                _current_change_in_function_value = funct_value - _prev_funct_value; // MF
+
+                if (std::abs(_current_change_in_function_value) < _min_delta) // MF
                     return false;
             }
 
             _been_used = true;
             _prev_funct_value = funct_value;
             return true;
+        }
+
+        // MF
+        double current_change_in_function_value() {
+          return _current_change_in_function_value;
+        }
+
+        // MF
+        int current_iteration() {
+          return static_cast<int>(_cur_iter);
         }
 
     private:
@@ -90,6 +102,8 @@ namespace dlib
         unsigned long _max_iter;
         unsigned long _cur_iter;
         double _prev_funct_value;
+
+        double _current_change_in_function_value; // MF
     };
 
 // ----------------------------------------------------------------------------------------
@@ -151,10 +165,19 @@ namespace dlib
                 return false;
 
             // check if the gradient norm is too small 
-            if (length(funct_derivative) < _min_norm)
+            _current_gradient_norm = length(funct_derivative) // MF
+            if (_current_gradient_norm < _min_norm)  // MF
                 return false;
 
             return true;
+        }
+
+        double current_gradient_norm() {
+          return _current_gradient_norm;
+        }
+
+        int current_iteration() {
+          return static_cast<int>(_cur_iter);
         }
 
     private:
@@ -163,6 +186,8 @@ namespace dlib
         double _min_norm;
         unsigned long _max_iter;
         unsigned long _cur_iter;
+
+        double _current_gradient_norm; // MF
     };
 
 // ----------------------------------------------------------------------------------------
