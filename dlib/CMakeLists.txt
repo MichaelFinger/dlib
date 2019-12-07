@@ -17,7 +17,7 @@ project(dlib)
 
 set(CPACK_PACKAGE_NAME "dlib")
 set(CPACK_PACKAGE_VERSION_MAJOR "19")
-set(CPACK_PACKAGE_VERSION_MINOR "17")
+set(CPACK_PACKAGE_VERSION_MINOR "18")
 set(CPACK_PACKAGE_VERSION_PATCH "99")
 set(VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH})
 # Only print these messages once, even if dlib is added multiple times via add_subdirectory()
@@ -373,7 +373,7 @@ if (NOT TARGET dlib)
             endif()
          endif()
 
-         mark_as_advanced(pthreadlib xlib xlib_path x11_path)
+         mark_as_advanced(xlib xlib_path x11_path)
       else () ##################################################################################
          # link to the nsl library if it exists.  this is something you need sometimes 
          find_library(nsllib nsl)
@@ -403,7 +403,7 @@ if (NOT TARGET dlib)
             endif()
          endif()
 
-         mark_as_advanced(nsllib pthreadlib socketlib)
+         mark_as_advanced(nsllib socketlib)
       endif () ##################################################################################
 
       if (NOT DLIB_NO_GUI_SUPPORT)
@@ -437,7 +437,6 @@ if (NOT TARGET dlib)
          if (PNG_FOUND)
             include_directories(${PNG_INCLUDE_DIR})
             set (dlib_needed_libraries ${dlib_needed_libraries} ${PNG_LIBRARIES})
-            set(REQUIRES_LIBS " libpng")
          else()
             # If we can't find libpng then statically compile it in.
             include_directories(external/libpng external/zlib)
@@ -487,7 +486,6 @@ if (NOT TARGET dlib)
                   )
                set_source_files_properties(external/libpng/arm/filter_neon.S PROPERTIES COMPILE_FLAGS "${CMAKE_ASM_FLAGS} ${CMAKE_CXX_FLAGS} -x assembler-with-cpp")
             endif()
-            set(REQUIRES_LIBS "")
          endif()
          set(source_files ${source_files}
             image_loader/png_loader.cpp
@@ -756,6 +754,7 @@ if (NOT TARGET dlib)
                ${cudnn}
                ${CUDA_curand_LIBRARY}
                ${CUDA_cusolver_LIBRARY}
+               ${CUDA_CUDART_LIBRARY}
                )
             if(openmp_libraries)
                list(APPEND dlib_needed_libraries ${openmp_libraries})
@@ -867,6 +866,11 @@ if (NOT TARGET dlib)
 
    # Install the library
    if (NOT DLIB_IN_PROJECT_BUILD)
+      string (REPLACE ";" " " pkg_config_dlib_needed_libraries "${dlib_needed_libraries}")
+      # Make the -I include options for pkg-config
+      foreach (ITR ${dlib_needed_includes})
+         set (pkg_config_dlib_needed_includes "${pkg_config_dlib_needed_includes} -I${ITR}")
+      endforeach()
       set_target_properties(dlib PROPERTIES
          VERSION ${VERSION})
       install(TARGETS dlib
@@ -966,11 +970,19 @@ if (WIN32 AND mkl_iomp_dll)
    # the need to add the Intel MKL to the PATH.
    if (CMAKE_LIBRARY_OUTPUT_DIRECTORY)
       add_custom_command(TARGET dlib POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy "${mkl_iomp_dll}" ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
+         # In some newer versions of windows/visual studio the output Config folder doesn't
+         # exist at first, so you can't copy to it unless you make it yourself.  So make
+         # sure the target folder exists first.
+         COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/"
+         COMMAND ${CMAKE_COMMAND} -E copy "${mkl_iomp_dll}" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/"
          )
    else()
       add_custom_command(TARGET dlib POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy "${mkl_iomp_dll}" ${CMAKE_BINARY_DIR}/$<CONFIG>
+         # In some newer versions of windows/visual studio the output Config folder doesn't
+         # exist at first, so you can't copy to it unless you make it yourself.  So make
+         # sure the target folder exists first.
+         COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/$<CONFIG>/"
+         COMMAND ${CMAKE_COMMAND} -E copy "${mkl_iomp_dll}" "${CMAKE_BINARY_DIR}/$<CONFIG>/"
          )
    endif()
 endif()
