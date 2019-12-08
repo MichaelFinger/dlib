@@ -73,9 +73,7 @@ namespace dlib
                     return false;
 
                 // check if the function change was too small
-                _current_change_in_function_value = funct_value - _prev_funct_value; // MF
-
-                if (std::abs(_current_change_in_function_value) < _min_delta) // MF
+                if (std::abs(funct_value - _prev_funct_value) < _min_delta)
                     return false;
             }
 
@@ -84,14 +82,8 @@ namespace dlib
             return true;
         }
 
-        // MF
-        double current_change_in_function_value() {
-          return _current_change_in_function_value;
-        }
-
-        // MF
-        int current_iteration() {
-          return static_cast<int>(_cur_iter);
+        unsigned long current_iteration() const {
+          return _cur_iter;
         }
 
     private:
@@ -102,8 +94,6 @@ namespace dlib
         unsigned long _max_iter;
         unsigned long _cur_iter;
         double _prev_funct_value;
-
-        double _current_change_in_function_value; // MF
     };
 
 // ----------------------------------------------------------------------------------------
@@ -165,32 +155,29 @@ namespace dlib
                 return false;
 
             // check if the gradient norm is too small 
-            _current_gradient_norm = length(funct_derivative); // MF
-            if (_current_gradient_norm < _min_norm)  // MF
+            _gradient_norm = length(funct_derivative);
+            if (_gradient_norm < _min_norm)
                 return false;
 
             return true;
         }
 
-        double current_gradient_norm() {
-          return _current_gradient_norm;
+        unsigned long current_iteration() const {
+          return _cur_iter;
         }
 
-        int current_iteration() {
-          return static_cast<int>(_cur_iter);
+        double gradient_norm() const {
+          return _gradient_norm;
         }
 
     private:
         bool _verbose;
 
         double _min_norm;
+        double _gradient_norm;
         unsigned long _max_iter;
         unsigned long _cur_iter;
-
-        double _current_gradient_norm; // MF
     };
-
-// ----------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------
 
@@ -198,27 +185,27 @@ namespace dlib
     {
     public:
         explicit gradient_max_abs_val_stop_strategy (
-            double min_gradient_abs_val = 1e-4
-        ) : _verbose(false), _min_gradient_abs_val(min_gradient_abs_val), _max_iter(0), _cur_iter(0) 
+            double max_abs_gradient_element = 1e-4
+        ) : _verbose(false), _max_abs_gradient_element(max_abs_gradient_element), _max_iter(0), _cur_iter(0) 
         {
             DLIB_ASSERT (
-                min_norm >= 0,
-                "\t gradient_max_abs_val_stop_strategy(min_norm)"
-                << "\n\t min_norm can't be negative"
-                << "\n\t min_norm: " << min_norm
+                _max_abs_gradient_element >= 0,
+                "\t gradient_max_abs_val_stop_strategy(max_abs_gradient_element)"
+                << "\n\t max_abs_gradient_element can't be negative"
+                << "\n\t max_abs_gradient_element: " << max_abs_gradient_element
             );
         }
 
         gradient_max_abs_val_stop_strategy (
-            double min_gradient_abs_val,
+            double max_abs_gradient_element,
             unsigned long max_iter
-        ) : _verbose(false), _min_gradient_abs_val(min_gradient_abs_val), _max_iter(max_iter), _cur_iter(0) 
+        ) : _verbose(false), _max_abs_gradient_element(max_abs_gradient_element), _max_iter(max_iter), _cur_iter(0) 
         {
             DLIB_ASSERT (
-                min_norm >= 0 && max_iter > 0,
-                "\t gradient_max_abs_val_stop_strategy(min_norm, max_iter)"
-                << "\n\t min_gradient_abs_val can't be negative and max_iter can't be 0"
-                << "\n\t min_gradient_abs_val: " << min_norm
+                max_abs_gradient_element >= 0 && max_iter > 0,
+                "\t gradient_max_abs_val_stop_strategy(max_abs_gradient_element, max_iter)"
+                << "\n\t max_abs_gradient_element can't be negative and max_iter can't be 0"
+                << "\n\t max_abs_gradient_element: " << max_abs_gradient_element
                 << "\n\t max_iter:  " << max_iter 
             );
         }
@@ -237,10 +224,12 @@ namespace dlib
             const T& funct_derivative
         ) 
         {
+            _gradient_max_abs_value = max(abs(funct_derivative));
+
             if (_verbose)
             {
                 using namespace std;
-                cout << "iteration: " << _cur_iter << "   objective: " << funct_value << "   max abs gradient: " << max(abs(funct_derivative)) << endl;
+                cout << "iteration: " << _cur_iter << "   objective: " << funct_value << "   max abs value of gradient: " << _gradient_max_abs_value << endl;
             }
 
             ++_cur_iter;
@@ -250,30 +239,28 @@ namespace dlib
             if (_max_iter != 0 && _cur_iter > _max_iter)
                 return false;
 
-            // check if the max abs gradient is too small 
-            _current_gradient_max_abs_val = max(abs(funct_derivative)); // MF
-            if (_current_gradient_max_abs_val < _min_gradient_abs_val)  // MF
+            // check if the max absolute value of gradient is too small 
+            if (_gradient_max_abs_value < _max_abs_gradient_element)
                 return false;
 
             return true;
         }
 
-        double current_gradient_max_abs_val() {
-          return _current_gradient_max_abs_val;
+        unsigned long current_iteration() const {
+          return _cur_iter;
         }
 
-        int current_iteration() {
-          return static_cast<int>(_cur_iter);
+        double gradient_maximum_absolute_value() const {
+          return _gradient_max_abs_value;
         }
 
     private:
         bool _verbose;
 
-        double _min_gradient_abs_val;
+        double _max_abs_gradient_element;
+        double _gradient_max_abs_value;
         unsigned long _max_iter;
         unsigned long _cur_iter;
-
-        double _current_gradient_max_abs_val; // MF
     };
 
 // ----------------------------------------------------------------------------------------
@@ -281,4 +268,3 @@ namespace dlib
 }
 
 #endif // DLIB_OPTIMIZATIOn_STOP_STRATEGIES_H_
-

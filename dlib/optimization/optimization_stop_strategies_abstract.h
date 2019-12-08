@@ -80,6 +80,7 @@ namespace dlib
                   false otherwise.
         !*/
 
+        unsigned long current_iteration() const;
     };
 
 // ----------------------------------------------------------------------------------------
@@ -147,6 +148,9 @@ namespace dlib
                   false otherwise.
         !*/
 
+        unsigned long current_iteration() const;
+
+        double gradient_norm() const;
     };
 
 // ----------------------------------------------------------------------------------------
@@ -157,37 +161,38 @@ namespace dlib
             WHAT THIS OBJECT REPRESENTS
                 This object represents a strategy for deciding if an optimization
                 algorithm should terminate.   This particular object looks at the 
-                maximum absolute value of the current gradient vector elements and stops 
-                if it is smaller than a user given threshold.  
+                absolute values of the gradient elements and stops if the maximum 
+                absolute value of all gradient elements is smaller than a user 
+                given threshold.  
         !*/
 
     public:
         explicit gradient_max_abs_val_stop_strategy (
-            double min_gradient_abs_val = 1e-4
+            double max_abs_gradient_element = 1e-4
         ); 
         /*!
             requires
-                - min_gradient_abs_val >= 0
+                - min_norm >= 0
             ensures
                 - This stop strategy object will only consider a search to be complete
-                  if the current maximum absolute value of the gradient elements is less than min_gradient_abs_val
+                  if the current gradient norm is less than min_norm
         !*/
 
-        gradient_max_abs_val_stop_strategy (
-            double min_norm,
+        gradient_norm_stop_strategy (
+            double max_abs_gradient_element,
             unsigned long max_iter
         );
         /*!
             requires
-                - min_gradient_abs_val >= 0
+                - max_abs_gradient_element >= 0
                 - max_iter > 0
             ensures
                 - This stop strategy object will only consider a search to be complete
-                  if the current maximum absolute value of the gradient elements is less than min_gradient_abs_val or more than 
-                  max_iter iterations has been executed.
+                  if the maximum absolute value of the current gradient elements is less than 
+                  min_abs_gradient_element or more than max_iter iterations have been executed.
         !*/
 
-        gradient_max_abs_val_stop_strategy& be_verbose( 
+        gradient_norm_stop_strategy& be_verbose( 
         );
         /*!
             ensures
@@ -214,6 +219,9 @@ namespace dlib
                   false otherwise.
         !*/
 
+        unsigned long current_iteration() const;
+
+        double gradient_maximum_absolute_value() const;
     };
 
 // ----------------------------------------------------------------------------------------
@@ -221,4 +229,3 @@ namespace dlib
 }
 
 #endif // DLIB_OPTIMIZATIOn_STOP_STRATEGIES_ABSTRACT_
-
